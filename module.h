@@ -9,27 +9,23 @@ struct Module {
 
   bool is_watering;
   bool is_enabled;
-  double water_supplied;
 
   bool moisture_low() {
-    return (moisture_sensor.moisture_value <= plant.moisture_threshold);
+    return (moisture_sensor.moisture_value > MoistureSensor::GetMoistureThreshold(plant.moisture_type));
   }
 
-  void run_watering_sequence(const double &supply_rate, const double &delta_time) {
-    if (water_supplied < plant.water_load) {
-        water_supplied += supply_rate * delta_time; // integrate
-    } else {
+  void run_watering_sequence() {
+    if (moisture_sensor.moisture_value <= MoistureSensor::GetMoistureGoal(plant.moisture_type)) {
         is_watering = false;
-        water_supplied = 0;
         valve.close();
     }
   }
 
-  void update(const double &supply_rate, const double &delta_time) {
+  void update() {
     if (is_enabled) {
       moisture_sensor.read();
       if (is_watering) {
-        run_watering_sequence(supply_rate, delta_time);
+        run_watering_sequence();
       } else if (moisture_low()) {
         valve.open();
         is_watering = true;
@@ -48,7 +44,6 @@ struct Module {
   void Disable() {
     is_watering = false;
     is_enabled = false;
-    water_supplied = 0;
     valve.close();
   }
 };
